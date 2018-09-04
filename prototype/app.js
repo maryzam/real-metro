@@ -53,7 +53,7 @@ d3.csv("moscow.csv")
     	const schema = svg
     					.append("g")
     					.attr("class", "schema");
-    	schema
+    	/*schema
     		.selectAll(".line")
     		.data(lines)
     			.enter()
@@ -80,11 +80,53 @@ d3.csv("moscow.csv")
     			.attr("r", 3)
     			.style("fill", (d) => lineStyles[d.Line].fill)
     			.style("stroke", "#fff")
-
+		*/
     	// draw real lines
+    	let latRange = d3.extent(source, (d) => d.Lat);
+    	let scaleLat = d3.scaleLinear()
+							.domain(latRange)
+							.range([width, 0]);
+		let lonRange = d3.extent(source, (d) => d.Lon);
+		let scaleLon = d3.scaleLinear()
+							.domain(lonRange)
+							.range([0, height]);	
+
     	let realLine = d3.line()
-				.x(function(d) { return x(d.date); })
-    			.y(function(d) { return y(d.close); });
+				.x(function(d) { return scaleLon(d.Lon); })
+    			.y(function(d) { return scaleLat(d.Lat); });
+
+    	const realMetro = svg
+    					.append("g")
+    					.attr("class", "real");
+    	realMetro
+    		.selectAll(".line")
+    		.data(lines)
+    			.enter()
+    		.append("path")
+    			.attr("class", "line")
+    			.attr("d", (d) => {
+    				const isClosed = lineStyles[d.key].closed;
+    				const curveType = isClosed
+    									 ? d3.curveCardinalClosed
+    									 : d3.curveCardinal;
+    				realLine.curve(curveType.tension(0.75));
+    				return realLine(d.values);
+    			})
+    			.style("fill", "none")
+    			.style("stroke", (d) => lineStyles[d.key].fill)
+    			.style("stroke-width", 2);
+
+    	schema
+    		.selectAll(".station")
+    		.data(source, (d) => d.Name)
+    			.enter()
+    		.append("circle")
+    			.attr("cx", (d) => scaleLon(d.Lon))
+    			.attr("cy", (d) => scaleLat(d.Lat))
+    			.attr("r", 3)
+    			.style("fill", (d) => lineStyles[d.Line].fill)
+    			.style("stroke", "#fff")
+
 
   })
 	// сргуппировать по линиям
