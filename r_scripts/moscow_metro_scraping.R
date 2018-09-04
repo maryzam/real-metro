@@ -20,10 +20,20 @@ stations$Line <- gsub("\u2009", "", stations$Line)
 stations$Elev <- parse_number(gsub("\u2212", "-", stations$Elev))
 
 #parse coords
-stations <- stations %>%
-  mutate(Coords2 = unlist(strsplit(Coords, "/"))[3]) %>%
-  mutate(Lat = parse_number(unlist(strsplit(Coords2, "; "))[1])) %>%
-  mutate(Lon = parse_number(unlist(strsplit(Coords2, "; "))[2]))
+get_coords <- function(source) {
+  coords <- strsplit(as.character(source), "/")
+  coords <- unlist(coords)[3]
+  coords <- unlist(strsplit(coords, "; "))
+  lat <- parse_number(coords[1])
+  lon <- parse_number(coords[2])
+  return(c(lat,lon))
+}
 
-dropped <- c("Coords", "Coords2")
-stations <- stations[-c(1), !(colnames(stations) %in% dropped) ]
+stations <- stations %>%
+            rowwise() %>% 
+            mutate(Lat = get_coords(Coords)[1]) %>%
+            mutate(Lon = get_coords(Coords)[2])
+
+stations <- stations[, !(colnames(stations) == "Coords") ]
+
+write.csv(stations, file = "data/moscow.csv", fileEncoding = "UTF-8")
